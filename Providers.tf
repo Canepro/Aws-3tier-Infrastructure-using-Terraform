@@ -15,10 +15,18 @@ terraform {
       version = ">= 2.0"
     }
 
+
+}
+        
     # namecheap = {
     #   source  = "namecheap/namecheap"
     # }
   }
+
+
+
+provider "aws" {
+    region = var.aws_region
 }
 
 
