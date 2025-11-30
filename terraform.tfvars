@@ -41,5 +41,5 @@ namecheap_api_key  = "your_api_key"
 namecheap_username = "sammyosung"
 namecheap_domain   = "samone.store"
 
-
-
+#Lestencrpt email in Clusterissuer
+letsencrypt_email  = "osung996@gmailcom"
