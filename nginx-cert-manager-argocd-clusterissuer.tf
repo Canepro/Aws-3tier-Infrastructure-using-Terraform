@@ -48,7 +48,8 @@ resource "null_resource" "create_cluster_issuer" {
   depends_on = [helm_release.cert_manager]
 
   provisioner "local-exec" {
-    command = "kubectl apply -f cluster-issuer.yaml"
+    command = "kubectl apply -f cluster-issuer.yaml --validate=false"
+
   }
 }
 
