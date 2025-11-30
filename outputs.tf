@@ -71,16 +71,10 @@ output "bankbackendapi_ecr_url" {
 }
 
 #Check whether cluster-issuer is ready
-output "cluster_issuer_status" {
-  value = chomp(
-    trimspace(
-      "${run_cmd("kubectl get clusterissuer http-01-production -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}'")}"
-    )
-  )
-  description = "Shows whether the ClusterIssuer is Ready (True) or not"
-}
 
 
+
+#R53 Records
 output "bank_subdomain_full_record" {
   value       = aws_route53_record.bank
   description = "Full Route53 record object for 'bank' subdomain"
