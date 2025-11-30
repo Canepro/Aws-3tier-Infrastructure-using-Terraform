@@ -52,7 +52,7 @@ output "cert_manager_status" {
 # DNS
 output "route53_nameservers" {
   description = "Route53 hosted zone nameservers (use these if necessary)"
-  value       = aws_route53_zone.example.name_servers
+  value       = aws_route53_zone.r53_zone.name_servers
 }
 
 # output "namecheap_nameservers" {
