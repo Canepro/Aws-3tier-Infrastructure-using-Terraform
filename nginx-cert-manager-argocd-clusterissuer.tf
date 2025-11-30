@@ -43,16 +43,21 @@ resource "helm_release" "cert_manager" {
 }
 
 
-# ClusterIssuer
+#Wait for CRDs after Helm install, then create ClusterIssuer
+resource "null_resource" "wait_for_cert_manager_crds" {
+  depends_on = [helm_release.cert_manager]
+
+  provisioner "local-exec" {
+    command = "kubectl wait --for=condition=established crd/certificates.cert-manager.io --timeout=120s"
+  }
+}
+
+
+#ClusterIssuer
 resource "kubernetes_manifest" "cluster_issuer" {
-  provider = kubernetes.post_eks   
+  provider = kubernetes.post_eks
 
-  depends_on = [
-    helm_release.cert_manager,
-    data.aws_eks_cluster.cluster,
-    data.aws_eks_cluster_auth.cluster
-]
-
+  depends_on = [null_resource.wait_for_cert_manager_crds]
 
   manifest = {
     apiVersion = "cert-manager.io/v1"
@@ -80,6 +85,7 @@ resource "kubernetes_manifest" "cluster_issuer" {
     }
   }
 }
+
 
 
 #ArgoCd
