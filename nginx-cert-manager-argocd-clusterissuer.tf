@@ -43,15 +43,53 @@ resource "helm_release" "cert_manager" {
 }
 
 
-#Wait for CRDs after Helm install, then create ClusterIssuer
+#Create kubeconfig inside Terraform
+resource "local_file" "kubeconfig" {
+  filename = "${path.module}/kubeconfig"
+
+  depends_on = [
+    module.eks
+  ]
+
+  content = <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- name: eks
+  cluster:
+    server: ${data.aws_eks_cluster.cluster.endpoint}
+    certificate-authority-data: ${data.aws_eks_cluster.cluster.certificate_authority[0].data}
+contexts:
+- name: eks
+  context:
+    cluster: eks
+    user: eks
+current-context: eks
+users:
+- name: eks
+  user:
+    token: ${data.aws_eks_cluster_auth.cluster.token}
+EOF
+}
+
+#apply ClusterIssuer using kubectl + kubeconfig
 resource "null_resource" "create_cluster_issuer" {
-  depends_on = [helm_release.cert_manager]
+  depends_on = [
+    helm_release.cert_manager,
+    local_file.kubeconfig
+  ]
 
   provisioner "local-exec" {
-    command = "kubectl apply -f cluster-issuer.yaml --validate=false"
+    environment = {
+      KUBECONFIG = local_file.kubeconfig.filename
+    }
 
+    command = <<EOT
+kubectl apply -f cluster-issuer.yaml
+EOT
   }
 }
+
 
 
 #ArgoCd
