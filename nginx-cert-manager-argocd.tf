@@ -41,3 +41,52 @@ resource "helm_release" "cert_manager" {
 
   depends_on = [module.eks]  # ensure EKS cluster is ready
 }
+
+
+#ClusterIssuer
+resource "kubernetes_manifest" "cluster_issuer" {
+  depends_on = [helm_release.cert_manager]
+
+  manifest = {
+    apiVersion = "cert-manager.io/v1"
+    kind       = "ClusterIssuer"
+    metadata = {
+      name = "http-01-production"
+    }
+    spec = {
+      acme = {
+        server = "https://acme-v02.api.letsencrypt.org/directory"
+        email  = var.letsencrypt_email
+        privateKeySecretRef = {
+          name = "acme-private-key"
+        }
+        solvers = [
+          {
+            http01 = {
+              ingress = {
+                class = "nginx"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+#ArgoCd
+resource "helm_release" "argocd" {
+  name       = "argocd"
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argo-cd"
+  version    = "5.52.0"
+  namespace  = "argocd"
+  create_namespace = true
+
+  values = [
+    file("argocd-values.yaml")
+  ]
+
+  depends_on = [kubernetes_manifest.cluster_issuer]
+}

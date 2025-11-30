@@ -20,3 +20,48 @@ resource "aws_route53_zone" "example" {
 #   domain      = var.namecheap_domain
 #   nameservers = aws_route53_zone.example.name_servers
 # }
+
+
+# Fetch the NGINX Ingress LoadBalancer service
+data "kubernetes_service" "nginx_ingress" {
+  provider = kubernetes.post_eks  # use the EKS provider alias
+  metadata {
+    name      = "nginx-ingress-${var.environment}-ingress-nginx-controller"
+    namespace = "ingress-nginx"
+  }
+
+  depends_on = [helm_release.nginx_ingress]  # ensure Helm release is installed
+}
+
+# Route53 record for "bank" subdomain
+resource "aws_route53_record" "bank" {
+  zone_id = aws_route53_zone.r53_zone.zone_id
+  name    = "bank.${var.namecheap_domain}"
+  type    = "CNAME"
+  ttl     = 300
+  records = [data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname]
+
+  depends_on = [data.kubernetes_service.nginx_ingress]
+}
+
+# Route53 record for "bankapi" subdomain
+resource "aws_route53_record" "bankapi" {
+  zone_id = aws_route53_zone.r53_zone.zone_id
+  name    = "bankapi.${var.namecheap_domain}"
+  type    = "CNAME"
+  ttl     = 300
+  records = [data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname]
+
+  depends_on = [data.kubernetes_service.nginx_ingress]
+}
+
+# Route53 record for "argocd" subdomain
+resource "aws_route53_record" "argocd" {
+  zone_id = aws_route53_zone.r53_zone.zone_id
+  name    = "argocd.${var.namecheap_domain}"
+  type    = "CNAME"
+  ttl     = 300
+  records = [data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname]
+
+  depends_on = [data.kubernetes_service.nginx_ingress]
+}

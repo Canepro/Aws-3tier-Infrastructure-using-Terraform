@@ -42,3 +42,4 @@ namecheap_username = "sammyosung"
 namecheap_domain   = "samone.store"
 
 
+

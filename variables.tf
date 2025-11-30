@@ -110,3 +110,7 @@ variable "namecheap_domain" {
   type        = string
 }
 
+variable "letsencrypt_email" {
+  description = "Email for Letsencrypt"
+  type        = string
+}

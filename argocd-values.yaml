@@ -1,0 +1,21 @@
+server:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      kubernetes.io/ingress.class: "nginx"
+      cert-manager.io/cluster-issuer: "http-01-production"
+      nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    hosts:
+      - argocd.samone.store                 #change to your actuall domain
+    tls:
+      - hosts:
+          - argocd.samone.store             #change to your actuall domain
+        secretName: argocd-tls
+
+configs:
+  cm:
+    url: https://argocd.samone.store        #change to your actuall domain
+    server.insecure: "false"
+  secret:
+    argocdServerAdminPassword: Sammy996@    #ArgoCd preferred password
