@@ -44,48 +44,13 @@ resource "helm_release" "cert_manager" {
 
 
 #Wait for CRDs after Helm install, then create ClusterIssuer
-resource "null_resource" "wait_for_cert_manager_crds" {
+resource "null_resource" "create_cluster_issuer" {
   depends_on = [helm_release.cert_manager]
 
   provisioner "local-exec" {
-    command = "kubectl wait --for=condition=established crd/certificates.cert-manager.io --timeout=120s"
+    command = "kubectl apply -f cluster-issuer.yaml"
   }
 }
-
-
-#ClusterIssuer
-resource "kubernetes_manifest" "cluster_issuer" {
-  provider = kubernetes.post_eks
-
-  depends_on = [null_resource.wait_for_cert_manager_crds]
-
-  manifest = {
-    apiVersion = "cert-manager.io/v1"
-    kind       = "ClusterIssuer"
-    metadata = {
-      name = "http-01-production"
-    }
-    spec = {
-      acme = {
-        server = "https://acme-v02.api.letsencrypt.org/directory"
-        email  = var.letsencrypt_email
-        privateKeySecretRef = {
-          name = "acme-private-key"
-        }
-        solvers = [
-          {
-            http01 = {
-              ingress = {
-                class = "nginx"
-              }
-            }
-          }
-        ]
-      }
-    }
-  }
-}
-
 
 
 #ArgoCd
@@ -101,5 +66,5 @@ resource "helm_release" "argocd" {
     file("argocd-values.yaml")
   ]
 
-  depends_on = [kubernetes_manifest.cluster_issuer]
+  depends_on = [null_resource.create_cluster_issuer]
 }
