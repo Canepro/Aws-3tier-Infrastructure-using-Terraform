@@ -69,3 +69,20 @@ output "bankfrontend_ecr_url" {
 output "bankbackendapi_ecr_url" {
   value = aws_ecr_repository.bank_backend_api.repository_url
 }
+
+#Check whether cluster-issuer is ready
+output "cluster_issuer_status" {
+  value = chomp(
+    trimspace(
+      "${run_cmd("kubectl get clusterissuer http-01-production -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}'")}"
+    )
+  )
+  description = "Shows whether the ClusterIssuer is Ready (True) or not"
+}
+
+
+output "bank_subdomain_full_record" {
+  value       = aws_route53_record.bank
+  description = "Full Route53 record object for 'bank' subdomain"
+}
+
