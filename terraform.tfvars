@@ -16,12 +16,13 @@ infra_subnets   = ["10.0.11.0/28", "10.0.12.0/28"]
 
 # EKS Node Group
 eks_node_groups = {
-  default = {
-    desired_capacity = 2
-    min_capacity     = 1
-    max_capacity     = 3
-    instance_type    = "t3.medium"
-    key_name         = "cicd" # Replace with your EC2 key pair
+  worker_nodes = {
+    desired_size   = 4
+    max_size       = 6
+    min_size       = 3
+    instance_types = ["t3.large"]
+    capacity_type  = "ON_DEMAND"
+    key_name       = "cicd"                 #your desired key
   }
 }
 
