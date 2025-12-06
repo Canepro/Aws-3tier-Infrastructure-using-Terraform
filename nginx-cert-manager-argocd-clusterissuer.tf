@@ -7,9 +7,10 @@
 # Keep chart versions updated as needed.
 
 
+
 # NGINX Ingress
 resource "helm_release" "nginx_ingress" {
-  provider         = helm  # Helm provider references kubernetes.post_eks
+  provider         = helm
   name             = "nginx-ingress-${var.environment}"
   repository       = "https://kubernetes.github.io/ingress-nginx"
   chart            = "ingress-nginx"
@@ -22,12 +23,26 @@ resource "helm_release" "nginx_ingress" {
     file("nginx-values.yaml")
   ]
 
-  depends_on = [module.eks]  # ensure EKS cluster is ready
+  depends_on = [module.eks]
+}
+
+# Wait for NGINX webhook patch job to complete
+resource "null_resource" "wait_for_nginx_webhook" {
+  depends_on = [helm_release.nginx_ingress]
+
+  provisioner "local-exec" {
+    command = <<EOT
+while [[ $(kubectl get job ingress-nginx-admission-patch -n ingress-nginx -o jsonpath='{.status.succeeded}') != "1" ]]; do
+  echo "Waiting for NGINX webhook patch job..."
+  sleep 5
+  done
+EOT
+  }
 }
 
 # Cert-Manager
 resource "helm_release" "cert_manager" {
-  provider         = helm  # Helm provider references kubernetes.post_eks
+  provider         = helm
   name             = "cert-manager-${var.environment}"
   repository       = "https://charts.jetstack.io"
   chart            = "cert-manager"
@@ -39,17 +54,14 @@ resource "helm_release" "cert_manager" {
     file("cert-manager-values.yaml")
   ]
 
-  depends_on = [module.eks]  # ensure EKS cluster is ready
+  depends_on = [module.eks]
 }
 
-
-#Create kubeconfig inside Terraform
+# Create kubeconfig inside Terraform
 resource "local_file" "kubeconfig" {
   filename = "${path.module}/kubeconfig"
 
-  depends_on = [
-    module.eks
-  ]
+  depends_on = [module.eks]
 
   content = <<EOF
 apiVersion: v1
@@ -72,38 +84,34 @@ users:
 EOF
 }
 
-#apply ClusterIssuer using kubectl + kubeconfig
+# Apply ClusterIssuer using kubectl + kubeconfig
 resource "null_resource" "create_cluster_issuer" {
-  depends_on = [
-    helm_release.cert_manager,
-    local_file.kubeconfig
-  ]
+  depends_on = [helm_release.cert_manager, local_file.kubeconfig]
 
   provisioner "local-exec" {
     environment = {
       KUBECONFIG = local_file.kubeconfig.filename
     }
 
-    command = <<EOT
-kubectl apply -f cluster-issuer.yaml
-EOT
+    command = "kubectl apply -f cluster-issuer.yaml"
   }
 }
 
-
-
-#ArgoCd
+# ArgoCD
 resource "helm_release" "argocd" {
-  name       = "argocd"
-  repository = "https://argoproj.github.io/argo-helm"
-  chart      = "argo-cd"
-  version    = "5.52.0"
-  namespace  = "argocd"
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  version          = "5.52.0"
+  namespace        = "argocd"
   create_namespace = true
 
   values = [
     file("argocd-values.yaml")
   ]
 
-  depends_on = [null_resource.create_cluster_issuer]
+  depends_on = [
+    null_resource.create_cluster_issuer,
+    null_resource.wait_for_nginx_webhook
+  ]
 }
