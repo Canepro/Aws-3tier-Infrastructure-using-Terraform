@@ -1,23 +1,16 @@
-# Ingress (NGINX) and Cert-Manager via Helm
-#
-# - NGINX chart will create a LoadBalancer service (ELB) by default based on the
-#   chart values (we supply a simple yaml file).
-# - Cert-manager chart will be installed with CRDs if enabled.
-#
-# Keep chart versions updated as needed.
-
-
-
-# NGINX Ingress
+# -------------------------
+# NGINX Ingress via Helm
+# -------------------------
 resource "helm_release" "nginx_ingress" {
   provider         = helm
   name             = "nginx-ingress-${var.environment}"
   repository       = "https://kubernetes.github.io/ingress-nginx"
   chart            = "ingress-nginx"
-  version          = "4.14.0"
-  timeout          = 600
+  version          = "4.12.0"
   namespace        = "ingress-nginx"
   create_namespace = true
+  timeout          = 600
+  wait             = true   # Wait for all resources to be ready
 
   values = [
     file("nginx-values.yaml")
@@ -26,21 +19,32 @@ resource "helm_release" "nginx_ingress" {
   depends_on = [module.eks]
 }
 
-# Wait for NGINX webhook patch job to complete
+# -------------------------
+# Wait for NGINX webhook secret and patch job
+# -------------------------
 resource "null_resource" "wait_for_nginx_webhook" {
   depends_on = [helm_release.nginx_ingress]
 
   provisioner "local-exec" {
     command = <<EOT
-while [[ $(kubectl get job ingress-nginx-admission-patch -n ingress-nginx -o jsonpath='{.status.succeeded}') != "1" ]]; do
-  echo "Waiting for NGINX webhook patch job..."
+echo "Waiting for NGINX admission webhook secret..."
+until kubectl get secret ingress-nginx-admission -n ingress-nginx &> /dev/null; do
   sleep 5
-  done
+done
+
+echo "Waiting for NGINX admission webhook patch job to complete..."
+while [[ $(kubectl get job ingress-nginx-admission-patch -n ingress-nginx -o jsonpath='{.status.succeeded}') != "1" ]]; do
+  sleep 5
+done
+
+echo "NGINX webhook ready!"
 EOT
   }
 }
 
-# Cert-Manager
+# -------------------------
+# Cert-Manager via Helm
+# -------------------------
 resource "helm_release" "cert_manager" {
   provider         = helm
   name             = "cert-manager-${var.environment}"
@@ -49,6 +53,8 @@ resource "helm_release" "cert_manager" {
   version          = "1.14.5"
   namespace        = "cert-manager"
   create_namespace = true
+  timeout          = 600
+  wait             = true
 
   values = [
     file("cert-manager-values.yaml")
@@ -57,7 +63,9 @@ resource "helm_release" "cert_manager" {
   depends_on = [module.eks]
 }
 
-# Create kubeconfig inside Terraform
+# -------------------------
+# Kubeconfig for local-exec
+# -------------------------
 resource "local_file" "kubeconfig" {
   filename = "${path.module}/kubeconfig"
 
@@ -84,9 +92,14 @@ users:
 EOF
 }
 
-# Apply ClusterIssuer using kubectl + kubeconfig
+# -------------------------
+# Apply ClusterIssuer
+# -------------------------
 resource "null_resource" "create_cluster_issuer" {
-  depends_on = [helm_release.cert_manager, local_file.kubeconfig]
+  depends_on = [
+    helm_release.cert_manager,
+    local_file.kubeconfig
+  ]
 
   provisioner "local-exec" {
     environment = {
@@ -97,21 +110,26 @@ resource "null_resource" "create_cluster_issuer" {
   }
 }
 
-# ArgoCD
+# -------------------------
+# ArgoCD via Helm
+# -------------------------
 resource "helm_release" "argocd" {
+  provider         = helm
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
   chart            = "argo-cd"
-  version          = "5.52.0"
+  version          = "5.51.6"
   namespace        = "argocd"
   create_namespace = true
+  timeout          = 600
+  wait             = true
 
   values = [
     file("argocd-values.yaml")
   ]
 
   depends_on = [
-    null_resource.create_cluster_issuer,
-    null_resource.wait_for_nginx_webhook
+    null_resource.wait_for_nginx_webhook,
+    null_resource.create_cluster_issuer
   ]
 }
