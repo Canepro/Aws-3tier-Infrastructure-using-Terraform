@@ -22,7 +22,7 @@ eks_node_groups = {
     min_size       = 3
     instance_types = ["t3.large"]
     capacity_type  = "ON_DEMAND"
-    key_name       = "Pod8 runner"                 #your desired key
+    key_name       = "cicd"                 #your desired key
   }
 }
 

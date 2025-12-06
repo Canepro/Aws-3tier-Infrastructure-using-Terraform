@@ -5,7 +5,7 @@
 
 terraform {
   backend "s3" {
-    bucket  = "pod-8-test-backend"          # replace with your S3 bucket name
+    bucket  = "sammyterraformbucket"          # replace with your S3 bucket name
     key     = "bankapp/terraform.tfstate"     # path/file inside the bucket
     region  = "us-east-1"                     # your AWS region
     encrypt = true
