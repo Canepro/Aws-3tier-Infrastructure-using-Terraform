@@ -150,6 +150,7 @@ resource "null_resource" "apply_argocd_ingress" {
       KUBECONFIG = local_file.kubeconfig.filename
     }
 
-    command = "kubectl apply -n argocd -f argocd-ingress.yaml"
+    command = "kubectl apply -f ${path.module}/argocd-ingress.yaml"
+
   }
 }
