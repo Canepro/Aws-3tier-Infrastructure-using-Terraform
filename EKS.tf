@@ -10,7 +10,7 @@
 
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
-  version = "19.15.1"
+  version = "~> 20.0"
 
   # Cluster identity
   cluster_name                   = "${var.project_name}-${var.environment}-cluster"

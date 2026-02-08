@@ -12,10 +12,10 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
-    - argocd.samone.store
+    - argocd.canempro.me
     secretName: argocd-tls
   rules:
-  - host: argocd.samone.store
+  - host: argocd.canempro.me
     http:
       paths:
       - path: /

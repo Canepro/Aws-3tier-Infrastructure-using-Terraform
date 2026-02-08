@@ -57,9 +57,9 @@ The Terraform deployment performs the following:
 
 ## Repository Links
 
-- **Frontend application:** [Bank-app-Frontend](https://github.com/sam-osung/Bank-app-Frontend)  
-- **Backend application:** [Bank-app-Backend](https://github.com/sam-osung/Bank-app-Backend)  
-- **Kubernetes manifests:** [Banking-app-with-K8s](https://github.com/sam-osung/banking-app-with-k8s)
+- **Frontend application:** [Bank-app-Frontend](https://github.com/canepro/Bank-app-Frontend)  
+- **Backend application:** [Bank-app-Backend](https://github.com/canepro/Bank-app-Backend)  
+- **Kubernetes manifests:** [Banking-app-with-K8s](https://github.com/canepro/banking-app-with-k8s)
 
 ---
 

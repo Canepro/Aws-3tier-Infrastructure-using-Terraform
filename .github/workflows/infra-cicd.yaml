@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -25,16 +25,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
-        # with:
-        #   cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }} #Uncomment if you are using terraform cloud
+        uses: hashicorp/setup-terraform@v3
 
-      - name: Install tfsec for security scanning
+      - name: Install Trivy for security scanning
         run: |
-          curl -sLo tfsec https://github.com/aquasecurity/tfsec/releases/download/v1.28.11/tfsec-linux-amd64
-          chmod +x tfsec
-          ./tfsec --version
-
+          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update && sudo apt-get install -y trivy
 
       - name: Install kubectl
         run: |
@@ -42,18 +40,17 @@ jobs:
           chmod +x kubectl
           sudo mv kubectl /usr/local/bin/
 
-
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Format
-        run: terraform fmt
+      - name: Terraform Format Check
+        run: terraform fmt -check
 
       - name: Terraform Validate
         run: terraform validate
 
-      - name: tfsec Scan
-        run: ./tfsec .
+      - name: Trivy IaC Scan
+        run: trivy config .
         continue-on-error: true
 
       - name: Terraform Plan
@@ -62,5 +59,5 @@ jobs:
       # - name: Terraform Apply
       #   run: terraform apply -auto-approve
 
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
+      # - name: Terraform Destroy
+      #   run: terraform destroy -auto-approve

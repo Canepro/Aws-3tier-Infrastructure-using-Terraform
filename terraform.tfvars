@@ -22,7 +22,7 @@ eks_node_groups = {
     min_size       = 3
     instance_types = ["t3.large"]
     capacity_type  = "ON_DEMAND"
-    key_name       = "cicd"                 #your desired key
+    key_name       = "aws_key"              # replace with your EC2 key pair name
   }
 }
 
@@ -31,16 +31,16 @@ eks_node_groups = {
 rds_instance_type     = "db.t3.micro"
 rds_allocated_storage = 20
 rds_dbname            = "appdb"
-rds_username          = "bank"
-rds_password          = "sammy996"  # Replace with a secure password
+rds_username          = "bankadmin"
+rds_password          = ""                  # Set via TF_VAR_rds_password env variable
 rds_port              = 5432
 
 
 # Route53 / Namecheap
 namecheap_api_user = "your_api_user"
 namecheap_api_key  = "your_api_key"
-namecheap_username = "sammyosung"
-namecheap_domain   = "samone.store"
+namecheap_username = "canepro"
+namecheap_domain   = "canempro.me"
 
-#Lestencrpt email in Clusterissuer
-letsencrypt_email  = "osung996@gmailcom"
+# Letsencrypt email for ClusterIssuer
+letsencrypt_email  = "mogah.vincent@hotmail.com"

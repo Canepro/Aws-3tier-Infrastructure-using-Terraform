@@ -57,6 +57,7 @@ resource "aws_db_instance" "postgres" {
   password             = var.rds_password
   port                 = var.rds_port
   skip_final_snapshot  = true
+  storage_encrypted    = true
   db_subnet_group_name = aws_db_subnet_group.rds_subnets.name
 
   vpc_security_group_ids = [aws_security_group.rds_sg.id]  

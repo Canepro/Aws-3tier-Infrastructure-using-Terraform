@@ -11,17 +11,15 @@ terraform {
     }
 
     helm = {
-      source = "hashicorp/helm"
+      source  = "hashicorp/helm"
       version = ">= 2.0"
     }
 
-
-}
-        
     # namecheap = {
     #   source  = "namecheap/namecheap"
     # }
   }
+}
 
 
 
